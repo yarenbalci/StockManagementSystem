@@ -1,0 +1,52 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+    font-family: Arial, sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: #0b0b12;
+    color: white;
+}
+
+
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* TRACK (arka plan) */
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+/* THUMB (kaydırma çubuğu) */
+::-webkit-scrollbar-thumb {
+    background: darkblue;
+    border-radius: 10px;
+    border: 2px solid #0a0a0a;
+}
+
+/* HOVER EFEKT */
+::-webkit-scrollbar-thumb:hover {
+    background: white;
+
+}
+
+
+
+
+
+
+#sidebar {
+    background: white;
+    position: sticky;
+}
+
+
