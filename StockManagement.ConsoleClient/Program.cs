@@ -7,8 +7,8 @@ Console.WriteLine("Fetching products from API...\n");
 
 using (HttpClient client = new HttpClient())
 {
-    client.BaseAddress = new Uri("https://localhost:7026/");
-
+    client.BaseAddress = new Uri("http://localhost:5156/");
+    
     try
     {
         HttpResponseMessage response = await client.GetAsync("api/products");

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using StockManagement.Data.Entities;
 using WebApplication1.DataTransferObject;
@@ -18,6 +19,8 @@ namespace WebApplication1.Controllers
             _context = context;
             _mapper = mapper;
         }
+
+
 
         [HttpGet]
         public async Task<IActionResult> GetProducts(
@@ -96,6 +99,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrator,Admin")]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto dto)
         {
             if (dto == null)
@@ -113,7 +117,9 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProductId }, resultDto);
         }
 
+
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator,Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductUpdateDto dto)
         {
             if (id != dto.ProductId)
@@ -149,6 +155,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrator,Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -163,6 +170,7 @@ namespace WebApplication1.Controllers
 
             return Ok();
         }
+
 
         [HttpGet("critical-stock")]
         public async Task<IActionResult> GetCriticalStockProducts([FromQuery] int threshold = 20)

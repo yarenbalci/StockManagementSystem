@@ -54,6 +54,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'include',
                     body: JSON.stringify({
                         username: usernameInput,
                         password: passwordInput
@@ -66,7 +67,7 @@
                 if (response.ok) {
                     localStorage.setItem("isLoggedIn", "true");
                     localStorage.setItem("username", usernameInput);
-                    localStorage.setItem("role", data.role || "Admin");
+                    localStorage.setItem("role", data.Role || data.role || "Admin");
 
                     console.log("LocalStorage Kaydedildi:", localStorage.getItem("isLoggedIn"));
 

@@ -1,39 +1,92 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const username = localStorage.getItem("username") || "AdminUser";
-    const role = localStorage.getItem("role") || "Administrator";
+    const userRole = localStorage.getItem("role") || "";
+    const cleanRole = userRole.trim().toLowerCase();
+    const isAdmin = (cleanRole === "admin" || cleanRole === "administrator");
 
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    const username = localStorage.getItem("username") || "User";
+
+    // 2. Element seçimlendirmeleri
     const loginBtn = document.getElementById("loginBtn");
     const userDropdownContainer = document.getElementById("userDropdownContainer");
     const navUsername = document.getElementById("navUsername");
     const navRole = document.getElementById("navRole");
     const userAvatarLetter = document.getElementById("userAvatarLetter");
     const logoutBtn = document.getElementById("logoutBtn");
+    const addNewProductBtn = document.getElementById("addNewProductBtn") || document.querySelector('[data-bs-target="#addProductModal"]');
 
+    // 3. Oturum ve Arayüz Yetki Yönetimi
     if (isLoggedIn === "true") {
         if (loginBtn) loginBtn.style.display = "none";
         if (userDropdownContainer) userDropdownContainer.style.display = "block";
 
         if (navUsername) navUsername.textContent = username;
-        if (navRole) navRole.textContent = role;
+        if (navRole) navRole.textContent = userRole;
         if (userAvatarLetter) userAvatarLetter.textContent = username.charAt(0).toUpperCase();
+
+
+        if (addNewProductBtn) {
+            if (isAdmin) {
+                addNewProductBtn.classList.remove("d-none");
+            } else {
+                addNewProductBtn.classList.add("d-none");
+            }
+        }
 
         if (logoutBtn) {
             logoutBtn.addEventListener("click", function (e) {
                 e.preventDefault();
-                localStorage.removeItem("isLoggedIn");
-                localStorage.removeItem("username");
-                localStorage.removeItem("role");
+                localStorage.clear();
                 window.location.href = 'login.html';
             });
         }
     } else {
         if (loginBtn) loginBtn.style.display = "block";
         if (userDropdownContainer) userDropdownContainer.style.display = "none";
+        if (addNewProductBtn) addNewProductBtn.classList.add("d-none");
     }
 
+    // 4. Sayfa Verilerini ve Event Listener'ları Yükle
     loadCategoriesForFilter();
     loadDashboardData();
+
+    const addProductForm = document.getElementById("addProductForm");
+    if (addProductForm) {
+        addProductForm.addEventListener("submit", handleProductSubmit);
+    }
+
+    if (addNewProductBtn) {
+        addNewProductBtn.addEventListener("click", function () {
+            resetModalToCreateMode();
+        });
+    }
+
+    const addProductModal = document.getElementById('addProductModal');
+    if (addProductModal) {
+        addProductModal.addEventListener('hidden.bs.modal', function () {
+            resetModalToCreateMode();
+        });
+    }
+
+    const btnRefresh = document.getElementById("btnRefresh");
+    if (btnRefresh) {
+        btnRefresh.addEventListener("click", function () {
+            if (typeof resetFilters === 'function') {
+                resetFilters();
+            } else {
+                location.reload();
+            }
+        });
+    }
+
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const sidebar = document.querySelector(".sidebar") || document.getElementById("sidebar");
+
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener("click", function () {
+            sidebar.classList.toggle("d-none");
+        });
+    }
 });
 
 
@@ -117,9 +170,11 @@ function applyFilters() {
 }
 
 
+
 async function loadDashboardData() {
     await fetchFilteredProducts({});
 }
+
 
 async function fetchFilteredProducts(filters) {
     const tableBody = document.getElementById("productTableBody");
@@ -237,6 +292,7 @@ function resetFilters() {
     updateSummaryCards(0, 0, 0, 0);
 }
 
+
 function updateSummaryCards(totalProducts, totalValue, lowStock, outOfStock) {
     const elTotal = document.getElementById("statTotalProducts");
     const elValue = document.getElementById("statTotalValue");
@@ -342,7 +398,8 @@ function renderDashboardCharts(productsData, categoriesData) {
     let outOfStockCount = 0;
 
     productsData.forEach(prod => {
-        const pStock = prod.unitsInStock !== undefined ? prod.unitsInStock : (prod.UnitsInStock !== undefined ? prod.UnitsInStock : (prod.stock || 0));
+        const pStock = prod.unitsInStock !== undefined ? prod.unitsInStock : (prod.UnitsInStock !== undefined ? 
+            prod.UnitsInStock : (prod.stock || 0));
         if (pStock === 0) {
             outOfStockCount++;
         } else if (pStock < 10) {
@@ -383,47 +440,6 @@ function renderDashboardCharts(productsData, categoriesData) {
 
 
 
-document.addEventListener("DOMContentLoaded", function () {
-    // 1. Sayfa açıldığında verileri ve kategorileri bir kez yükle
-    loadCategoriesForFilter();
-    loadDashboardData();
-
-    // 2. Form submit olayını tek bir merkezden yönet (Hem Ekleme hem Güncelleme)
-    const addProductForm = document.getElementById("addProductForm");
-    if (addProductForm) {
-        addProductForm.addEventListener("submit", handleProductSubmit);
-    }
-
-    // 3. "Add New Product" butonuna tıklandığında modu sıfırla
-    const addNewProductBtn = document.querySelector('[data-bs-target="#addProductModal"]');
-    if (addNewProductBtn) {
-        addNewProductBtn.addEventListener("click", function () {
-            resetModalToCreateMode();
-        });
-    }
-
-    // 4. Modal kapandığında da formu ve düzenleme modunu sıfırla
-    const addProductModal = document.getElementById('addProductModal');
-    if (addProductModal) {
-        addProductModal.addEventListener('hidden.bs.modal', function () {
-            resetModalToCreateMode();
-        });
-    }
-
-    // 5. Refresh butonunu yakala ve olay ekle
-    const btnRefresh = document.getElementById("btnRefresh");
-    if (btnRefresh) {
-        btnRefresh.addEventListener("click", function () {
-            // Varsa tüm filtreleri sıfırla, yoksa sayfayı yenile
-            if (typeof resetFilters === 'function') {
-                resetFilters();
-            } else {
-                location.reload();
-            }
-        });
-    }
-});
-
 function resetModalToCreateMode() {
     const form = document.getElementById("addProductForm");
     if (form) form.reset();
@@ -449,7 +465,6 @@ async function handleProductSubmit(event) {
     const unitsInStock = document.getElementById("productStock").value;
 
     const editIdInput = document.getElementById("editProductId");
-    // ID var mı ve boş değil mi kesin olarak kontrol edelim
     const isEditMode = editIdInput && editIdInput.value !== "" && editIdInput.value !== undefined;
 
     const productData = {
@@ -480,6 +495,7 @@ async function handleProductSubmit(event) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify(productData)
         });
 
@@ -489,21 +505,28 @@ async function handleProductSubmit(event) {
             throw new Error(`Failed to save product. Status: ${response.status}`);
         }
 
-        // Close the modal
         const modalElement = document.getElementById('addProductModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+        const modalInstance =
+            bootstrap.Modal.getInstance(modalElement) ||
+            new bootstrap.Modal(modalElement);
+
         modalInstance.hide();
 
-        // Reset form & remove edit id input
         document.getElementById("addProductForm").reset();
-        if (editIdInput) editIdInput.remove();
 
-        // Refresh table and statistics
+        if (editIdInput) {
+            editIdInput.remove();
+        }
+
         if (typeof applyFilters === 'function') {
             applyFilters();
         }
 
-        console.log(isEditMode ? "Product updated successfully!" : "Product added successfully!");
+        console.log(
+            isEditMode
+                ? "Product updated successfully!"
+                : "Product added successfully!"
+        );
 
     } catch (error) {
         console.error("Error saving product:", error);
@@ -515,21 +538,23 @@ async function handleProductSubmit(event) {
 async function editProduct(productId) {
     try {
         const response = await fetch(`/api/products/${productId}`);
-        if (!response.ok) throw new Error("Failed to fetch product details.");
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch product details.");
+        }
 
         const product = await response.json();
 
-        // Populate form fields
         document.getElementById("productName").value = product.productName;
         document.getElementById("productCategory").value = product.categoryId;
         document.getElementById("productPrice").value = product.unitPrice;
         document.getElementById("productStock").value = product.unitsInStock;
 
-        // Change modal header title
-        document.getElementById("addProductModalLabel").innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Product';
+        document.getElementById("addProductModalLabel").innerHTML =
+            '<i class="bi bi-pencil-square me-2"></i>Edit Product';
 
-        // Add a hidden input to track the editing product ID
         const form = document.getElementById("addProductForm");
+
         let editIdInput = document.getElementById("editProductId");
 
         if (!editIdInput) {
@@ -538,11 +563,12 @@ async function editProduct(productId) {
             editIdInput.id = "editProductId";
             form.appendChild(editIdInput);
         }
+
         editIdInput.value = productId;
 
-        // Show the modal
         const modalElement = document.getElementById('addProductModal');
         const modalInstance = new bootstrap.Modal(modalElement);
+
         modalInstance.show();
 
     } catch (error) {
@@ -553,21 +579,25 @@ async function editProduct(productId) {
 
 
 async function deleteProduct(productId) {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+    if (!confirm("Are you sure you want to delete this product?")) {
+        return;
+    }
 
     try {
         const response = await fetch(`/api/products/${productId}`, {
             method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error("Failed to delete product.");
+        if (!response.ok) {
+            throw new Error("Failed to delete product.");
+        }
 
         console.log("Product deleted successfully.");
 
-        // Refresh table and statistics
         if (typeof applyFilters === 'function') {
             applyFilters();
         }
+
     } catch (error) {
         console.error("Error deleting product:", error);
         alert("An error occurred while deleting the product.");
@@ -590,20 +620,25 @@ function renderTable(products) {
 
     if (!products || products.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No products found.</td></tr>';
-        // Ürün bulunamadığında pagination alanını da temizleyebilirsiniz
         const paginationContainer = document.getElementById("paginationContainer");
         if (paginationContainer) paginationContainer.innerHTML = "";
+        updateProductCounts("0", 0);
         return;
     }
 
-    // 1. Sayfalandırma hesabı (Hangi aralıktaki ürünler gösterilecek?)
+    const userRole = localStorage.getItem("role");
+
+    const cleanRole = userRole ? userRole.trim().toLowerCase() : "";
+
+    const isAdmin = (cleanRole === "admin" || cleanRole === "administrator");
+
+    // Sayfalandırma hesabı
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     const paginatedItems = products.slice(start, end);
 
     let tableRowsHtml = "";
     paginatedItems.forEach(product => {
-        // Veri kaynaklarındaki farklı isimlendirmeleri burada eşitliyoruz
         const pId = product.productId || product.ProductID || product.id || 0;
         const pName = product.productName || product.ProductName || product.name || "N/A";
         const pPrice = product.unitPrice || product.UnitPrice || product.price || 0;
@@ -613,6 +648,21 @@ function renderTable(products) {
         let stockBadgeClass = pStock === 0 ? 'bg-danger bg-opacity-10 text-danger' :
             (pStock < 10 ? 'bg-warning bg-opacity-10 text-warning' : 'bg-success bg-opacity-10 text-success');
 
+        // Sadece Admin yetkisi varsa düzenleme/silme butonlarını ekle
+        let actionButtonsHtml = "";
+        if (isAdmin) {
+            actionButtonsHtml = `
+                <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-light text-primary border-0 p-1 me-1" 
+                    onclick="editProduct(${pId})" title="Edit"><i class="bi bi-pencil-fill"></i></button>
+                    <button class="btn btn-sm btn-light text-danger border-0 p-1" 
+                    onclick="deleteProduct(${pId})" title="Delete"><i class="bi bi-trash-fill"></i></button>
+                </td>
+            `;
+        } else {
+            actionButtonsHtml = `<td class="text-end pe-3 text-muted">-</td>`;
+        }
+
         tableRowsHtml += `
             <tr>
                 <td class="fw-semibold text-muted ps-3">#${pId}</td>
@@ -620,17 +670,16 @@ function renderTable(products) {
                 <td>$${Number(pPrice).toFixed(2)}</td>
                 <td><span class="badge ${stockBadgeClass} px-2 py-1">${pStock} Units</span></td>
                 <td><span class="badge bg-secondary bg-opacity-10 text-secondary px-2 py-1">${pCategory}</span></td>
-                <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-light text-primary border-0 p-1 me-1" onclick="editProduct(${pId})"><i class="bi bi-pencil-fill"></i></button>
-                    <button class="btn btn-sm btn-light text-danger border-0 p-1" onclick="deleteProduct(${pId})"><i class="bi bi-trash-fill"></i></button>
-                </td>
+                ${actionButtonsHtml}
             </tr>`;
     });
 
     tableBody.innerHTML = tableRowsHtml;
-
-    // 2. Sayfa butonlarını oluşturmak için fonksiyonu çağırıyoruz
     renderPaginationControls(products.length);
+
+    const displayStart = ((currentPage - 1) * rowsPerPage) + 1;
+    const displayEnd = Math.min(currentPage * rowsPerPage, products.length);
+    updateProductCounts(`${displayStart}-${displayEnd}`, products.length);
 }
 
 function renderPaginationControls(totalItems) {
@@ -660,21 +709,23 @@ function renderPaginationControls(totalItems) {
 function changePage(page, productCount) {
     currentPage = page;
     renderTable(originalData);
+}
 
-    const row_count = 20*page;
-    updateProductCounts(row_count , productCount);
+function updateProductCounts(showingText, totalItems) {
+    const showingRangeEl = document.getElementById("showingRange");
+    const totalCountEl = document.getElementById("totalCount");
+
+    if (showingRangeEl) showingRangeEl.innerText = showingText;
+    if (totalCountEl) totalCountEl.innerText = totalItems;
 }
 
 
-function updateProductCounts(showingRange, totalItems) {
-    document.getElementById("showingRange").textContent = showingRange;
-    document.getElementById("totalCount").textContent = totalItems;
+function updateProductCounts(showingText, totalItems) {
+    const showingRangeEl = document.getElementById("showingRange");
+    const totalCountEl = document.getElementById("totalCount");
 
-    //const showingRangeEl = document.getElementById('showingRange');
-    //const totalCountEl = document.getElementById('totalCount');
-
-    //if (showingRangeEl) showingRangeEl.innerText = showingText;
-    //if (totalCountEl) totalCountEl.innerText = totalItems;
+    if (showingRangeEl) showingRangeEl.innerText = showingText;
+    if (totalCountEl) totalCountEl.innerText = totalItems;
 }
 
 
@@ -838,7 +889,8 @@ function exportTableToExcel() {
         "Product Name": product.productName || product.ProductName || product.name || "N/A",
         "Unit Price ($)": Number(product.unitPrice || product.UnitPrice || product.price || 0).toFixed(2),
         "Units In Stock": product.unitsInStock ?? product.UnitsInStock ?? product.stock ?? 0,
-        "Category": product.categoryName || product.CategoryName || (product.category ? product.category.categoryName : 'General')
+        "Category": product.categoryName || product.CategoryName || 
+        (product.category ? product.category.categoryName : 'General')
     }));
 
     // SheetJS ile JSON verisini çalışma sayfasına dönüştür
@@ -849,6 +901,5 @@ function exportTableToExcel() {
     // Excel dosyasını indir
     XLSX.writeFile(workbook, "Report.xlsx");
 }
-
 
 
